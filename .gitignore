@@ -7,8 +7,8 @@ bin/
 *.exe
 
 # expr 실험용 빌드 산출물 (gcc 직접 빌드)
-expr/*.exe
-expr/*.o
+# expr/*.exe
+# expr/*.o
 
 # 디버그 관련
 *.gdb_history

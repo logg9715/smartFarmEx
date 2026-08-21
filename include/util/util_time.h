@@ -1,4 +1,4 @@
 #ifndef UTIL_TIME_H
 #define UTIL_TIME_H
-const char *get_current_time(void);
+const int get_now_time(char *out, size_t out_size);
 #endif

@@ -33,7 +33,6 @@ error_std :
     return -1;
 }
 
-
 /*
 return : SIGTERM 맞음 = 1, 아님 = 0, 에러 = -1 
 */

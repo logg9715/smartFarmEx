@@ -20,6 +20,7 @@ int epoll_loop(const int signal_fd)
     int inotify_fd;
     int ret;
     int event_list_index;
+    char timestamp[40];
 
     // epoll 생성
     if ((fd = epoll_create1(0)) == -1) { perror("error epoll_loop > epoll_create"); goto error_std; }
@@ -81,7 +82,8 @@ int epoll_loop(const int signal_fd)
             }
             // ==========================================================================================
         }
-        printf("=========== %s ============\n", get_current_time());
+        get_now_time(timestamp, sizeof(timestamp));
+        printf("=========== %s ============\n", timestamp);
     }
 
     printf("closing process...\n");
