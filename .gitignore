@@ -1,0 +1,34 @@
+# 빌드 산출물
+build/
+bin/
+*.o
+*.a
+*.so
+*.exe
+
+# expr 실험용 빌드 산출물 (gcc 직접 빌드)
+expr/*.exe
+expr/*.o
+
+# 디버그 관련
+*.gdb_history
+.gdb_history
+core
+core.*
+vgcore.*
+
+# 에디터 / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS (Mac에서 Remote-SSH로 작업 시)
+.DS_Store
+
+# 기타
+*.log
+tags
+cscope.*
+compile_commands.json
