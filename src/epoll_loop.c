@@ -8,9 +8,10 @@
 #include "epoll_loop.h"
 #include "sig_handler.h"
 #include "util/util_time.h"
+#include "util/util_log.h"
 
-#define MAX_EVENTS 10
 #define TIMEOUT 5000
+#define MAX_EVENTS 10
 
 int epoll_loop(const int signal_fd)
 {
@@ -23,20 +24,35 @@ int epoll_loop(const int signal_fd)
     char timestamp[40];
 
     // epoll 생성
-    if ((fd = epoll_create1(0)) == -1) { perror("error epoll_loop > epoll_create"); goto error_std; }
+    if ((fd = epoll_create1(0)) == -1) 
+    {
+        log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop");
+        goto error_std; 
+    }
 
     // epoll에 이벤트 등록
-    if((inotify_fd = ready_inotify()) == -1) { goto error_fd; }
+    if((inotify_fd = ready_inotify()) == -1) 
+    { 
+        goto error_fd; 
+    }
 
     memset(&ep_event, 0, sizeof(ep_event));
     ep_event.events = EPOLLIN;
     ep_event.data.fd = inotify_fd;
-    if(epoll_ctl(fd, EPOLL_CTL_ADD, inotify_fd, &ep_event) == -1) { perror("error epoll_loop > epoll_ctl1"); goto error_fd_inotify_fd; }
+    if(epoll_ctl(fd, EPOLL_CTL_ADD, inotify_fd, &ep_event) == -1) 
+    { 
+        log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop");
+        goto error_fd_inotify_fd;
+    }
 
     memset(&ep_event, 0, sizeof(ep_event));
     ep_event.events = EPOLLIN;
     ep_event.data.fd = signal_fd;
-    if(epoll_ctl(fd, EPOLL_CTL_ADD, signal_fd, &ep_event) == -1) { perror("error epoll_loop > epoll_ctl2"); goto error_fd_inotify_fd; }
+    if(epoll_ctl(fd, EPOLL_CTL_ADD, signal_fd, &ep_event) == -1) 
+    { 
+        log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop");
+        goto error_fd_inotify_fd; 
+    }
 
     int is_working = 1;
     while (is_working)
@@ -51,8 +67,12 @@ int epoll_loop(const int signal_fd)
         if (ret == -1)	// CASE : epoll_wait 에러 발생한 경우
 		{
             if(errno == EINTR)  // ctrl_z 시그널 중단처리
+            {
+                log_write(LL_INFO, 0, "SIGTSTP");
+                log_flush();
                 continue;
-            perror("error epoll_loop > epoll_wait");
+            }
+            log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop");
             goto error_fd_inotify_fd;
 		}
 		else if (ret == 0)	// CASE : timeout이 발생한 경우
@@ -82,8 +102,12 @@ int epoll_loop(const int signal_fd)
             }
             // ==========================================================================================
         }
+        // DEBUG ----------------------------------------------
         get_now_time(timestamp, sizeof(timestamp));
-        printf("=========== %s ============\n", timestamp);
+        char loop_end_buff[128] = "\0";
+        sprintf(loop_end_buff, "=========== %s ============", timestamp);
+        log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, loop_end_buff);
+        // ----------------------------------------------------
     }
 
     printf("closing process...\n");
@@ -106,11 +130,17 @@ int ready_inotify(void)
     int wd;
 
     fd = inotify_init();
-    if(fd == -1) { perror("error ready_inotify > inotify_init"); goto error_std; }
+    if(fd == -1) { 
+        log_write(LL_ERROR, LC_SHOW_PERROR, "ready_inotify");
+        goto error_std; 
+    }
 
     wd = inotify_add_watch(fd, ".", IN_CREATE | IN_DELETE);
-    if (wd == -1) { perror("error ready_inotify > inotify_add_watch"); goto error_fd; }
-
+    if (wd == -1) 
+    { 
+        log_write(LL_ERROR, LC_SHOW_PERROR, "ready_inotify");
+        goto error_fd; 
+    }
     return fd;
 
 error_fd : 
@@ -127,7 +157,12 @@ int print_inotify(const int fd)
     size_t event_size;
 
     ret = read(fd, buff, sizeof(buff));
-    if(ret == -1) { perror("Error print_inotify > read_inotify read()"); return -1; }
+
+    if(ret == -1) 
+    { 
+        log_write(LL_ERROR, LC_SHOW_PERROR, "print_inotify > read_inotify");
+        return -1; 
+    }
 
     event = (struct inotify_event *)buff;
     while(ret > 0)

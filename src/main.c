@@ -1,15 +1,32 @@
 #include "epoll_loop.h"
 #include "sig_handler.h"
-#include <stdio.h>
+#include "util/util_log.h"
+#include "config.h"
 
 int main(int argc, char const *argv[])
 {
     int signal_fd;
+    
+    // # --- ready process
+    // log
+    if(log_open(LOG_PATH) == -1)
+        return -1;
+    log_write(LL_INFO, LC_SHOW_PRINTF, "log file opened");
+    log_set_level(LL_DEBUG); // 중요 !!!!!!!! [로그 레벨 설정]
+    log_write(LL_INFO, LC_SHOW_PRINTF, "log level set OK");
 
-    if((signal_fd = set_signal_handler()) == -1) return -1;
-    else printf("signal_fd Success\n");
+    // signal handler
+    if((signal_fd = set_signal_handler()) == -1) 
+        return -1;
 
+    // # --- loop process
     epoll_loop(signal_fd);
+
+    // # --- close process
+    log_write(LL_INFO, LC_SHOW_PRINTF, "end Process");
+    log_flush();
+    log_close();
+
     return 0;
 }
 

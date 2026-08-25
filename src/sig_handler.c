@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "sig_handler.h"
+#include "util/util_log.h"
 
 // 프로그램 종료/다시로드를 위한 시그널 핸들러
 int set_signal_handler(void)
@@ -17,13 +18,13 @@ int set_signal_handler(void)
     
     if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1)
     {
-        perror("Error set_signal_handler > sigprocmask");
+        log_write(LL_ERROR, LC_SHOW_PERROR, "set_signal_handler");
         goto error_std;
     }
 
     if((fd = signalfd(-1, &mask, 0)) == -1)
     {
-        perror("Error set_signal_handler > signalfd");
+        log_write(LL_ERROR, LC_SHOW_PERROR, "set_signal_handler");
         goto error_std;
     }
 
@@ -41,9 +42,10 @@ int check_signal_term(int fd)
     struct signalfd_siginfo fdsi;
     ssize_t res;
     res = read(fd, &fdsi, sizeof(fdsi));
-    if(res == -1)
+
+    if(res != sizeof(fdsi))
     {
-        perror("Error check_signal_term > read");
+        log_write(LL_ERROR, LC_SHOW_PERROR, "check_signal_term");
         return -1;
     }
 
