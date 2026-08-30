@@ -16,7 +16,7 @@ enum log_flag {
 };
 
 int log_open(const char *);
-void log_set_level(enum log_level); 
+void log_set_level(const enum log_level); 
 void log_write(const enum log_level, const enum log_flag, const char *);
 void log_close(void);
 void log_flush(void);

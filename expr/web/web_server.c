@@ -23,7 +23,6 @@ todo :
 
 */
 
-
 // 응답 헤더
 static const char response[] =
     "HTTP/1.1 200 OK\r\n"

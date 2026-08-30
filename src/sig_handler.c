@@ -18,13 +18,13 @@ int set_signal_handler(void)
     
     if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1)
     {
-        log_write(LL_ERROR, LC_SHOW_PERROR, "set_signal_handler");
+        log_write(LL_ERROR, LC_SHOW_PERROR, "set_signal_handler > sigprocmask");
         goto error_std;
     }
 
     if((fd = signalfd(-1, &mask, 0)) == -1)
     {
-        log_write(LL_ERROR, LC_SHOW_PERROR, "set_signal_handler");
+        log_write(LL_ERROR, LC_SHOW_PERROR, "set_signal_handler > signalfd");
         goto error_std;
     }
 
@@ -37,15 +37,14 @@ error_std :
 /*
 return : SIGTERM 맞음 = 1, 아님 = 0, 에러 = -1 
 */
-int check_signal_term(int fd)
+int check_signal_term(const int fd)
 {
     struct signalfd_siginfo fdsi;
     ssize_t res;
     res = read(fd, &fdsi, sizeof(fdsi));
-
     if(res != sizeof(fdsi))
     {
-        log_write(LL_ERROR, LC_SHOW_PERROR, "check_signal_term");
+        log_write(LL_ERROR, LC_SHOW_PERROR, "check_signal_term > read");
         return -1;
     }
 

@@ -6,11 +6,10 @@
 #include "config.h"
 #include "util/util_time.h"
 #include "util/util_log.h"
-#include "util/util_common.h"
 
 static FILE *g_log;
 static pthread_mutex_t g_log_lock = PTHREAD_MUTEX_INITIALIZER;
-static enum log_level g_show_level = LL_DEBUG;
+static enum log_level g_show_level = LOG_LEVEL;
 
 static char *get_log_level_str(enum log_level);
 static void copy_errno_str(int err, char *buf, size_t size);
@@ -38,7 +37,7 @@ int log_open(const char *path)
     로그 표시레벨 설정 (설정 안하면 기본값 : 전부 표시)
     설정값보다 레벨이 미만인 로그는 표시 안 함
 */
-void log_set_level(enum log_level lvl) 
+void log_set_level(const enum log_level lvl) 
 {
     g_show_level = lvl; 
 }
@@ -52,8 +51,8 @@ void log_write(const enum log_level ll, const enum log_flag lc, const char *cont
     int err = errno;
     const int use_errno = (lc & LC_SHOW_PERROR) ? 1 : 0;
     char timestamp[40], ebuff[64];
-    clear_str(timestamp);
-    clear_str(ebuff);
+    timestamp[0] = '\0';
+    ebuff[0] = '\0';
 
     if(g_show_level > ll) 
         return;
