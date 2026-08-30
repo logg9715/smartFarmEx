@@ -10,9 +10,9 @@ enum log_level {
 };
 
 enum log_flag {
-    LC_SHOW_PERROR = 1 << 0,
-    LC_SHOW_PRINTF = 1 << 1,
-    LC_NOT_WRITE   = 1 << 2,
+    LC_SHOW_PERROR = 1 << 0,    // perror로 표시(errno 같이 표시됨)
+    LC_SHOW_PRINTF = 1 << 1,    // printf로 표시
+    LC_NOT_WRITE   = 1 << 2,    // 로그 파일에 기록 안함
 };
 
 int log_open(const char *);

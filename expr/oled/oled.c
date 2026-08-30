@@ -17,8 +17,8 @@ typedef struct oled_fb
 int oled_cmd_send(int fd, uint8_t *cmd_list, int len);
 int oled_data_send(int fd, oled_fd_t *oled);
 void set_oled_data_buff(oled_fd_t *oled, int x, int y, int on);
-void fb_draw_char(oled_fd_t *oled, int x, int y, char c);
-void fb_draw_str(oled_fd_t *oled, int x, int y, const char *s);
+void set_oled_data_charbuff(oled_fd_t *oled, int x, int y, char c);
+void set_oled_data_strbuff(oled_fd_t *oled, int x, int y, const char *s);
 
 int oled_cmd_send(int fd, uint8_t* cmd_list, int len)
 {
@@ -54,7 +54,7 @@ int oled_data_send(int fd, oled_fd_t *oled)
     return 0;
 }
 
-void fb_draw_char(oled_fd_t *oled, int x, int y, char c)
+void set_oled_data_charbuff(oled_fd_t *oled, int x, int y, char c)
 {
     if (c < 32 || c > 126)
         c = '?';
@@ -69,10 +69,10 @@ void fb_draw_char(oled_fd_t *oled, int x, int y, char c)
     }
 }
 
-void fb_draw_str(oled_fd_t *oled, int x, int y, const char *s)
+void set_oled_data_strbuff(oled_fd_t *oled, int x, int y, const char *s)
 {
     while (*s) {
-        fb_draw_char(oled, x, y, *s);
+        set_oled_data_charbuff(oled, x, y, *s);
         x += 6;
         s++;
     }
@@ -148,7 +148,7 @@ int main(void)
 
         while (1) {
             memset(oled.buff, 0, sizeof(oled.buff));
-            fb_draw_str(&oled, x, y, "HELLO");
+            set_oled_data_strbuff(&oled, x, y, "HELLO");
             oled_data_send(fd, &oled);
 
             x += dx;
