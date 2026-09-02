@@ -13,7 +13,7 @@ struct epoll_event_handle
     void *ctx;
 };
 
-int epoll_loop(const int signal_fd);
-int finish_loop(epoll_event_handle_t *handle_t);
+int epoll_loop(const int);
+int finish_loop(epoll_event_handle_t *);
 
 #endif

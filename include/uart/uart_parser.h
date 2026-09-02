@@ -1,7 +1,7 @@
 #ifndef UART_PARSER_H
 #define UART_PARSER_H
 
-#include "frame/frame_sht30.h"
+#include "frame/frame_stm32.h"
 
 typedef struct 
 {
@@ -10,7 +10,7 @@ typedef struct
 } frame_parser_t;
 
 
-int parser_parse(frame_parser_t *p, frame_sht30_t *sht30);
-int parser_feed(frame_parser_t *p, frame_sht30_t *sht30, const uint8_t *data, size_t len);
+int parser_parse(frame_parser_t *, frame_stm32_t *);
+int parser_feed(frame_parser_t *, frame_stm32_t *, const uint8_t *, size_t );
 
 #endif

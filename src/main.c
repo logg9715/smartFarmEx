@@ -6,6 +6,7 @@
 int main(int argc, char const *argv[])
 {
     int signal_fd;
+    log_write(LL_INFO, LC_SHOW_PRINTF, "starting process...");
     
     // # --- ready process
     // log
@@ -20,6 +21,7 @@ int main(int argc, char const *argv[])
         return -1;
 
     // # --- loop process
+    log_write(LL_INFO, LC_SHOW_PRINTF, "loop start");
     epoll_loop(signal_fd);
 
     // # --- close process

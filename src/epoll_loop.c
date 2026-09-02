@@ -50,7 +50,7 @@ int epoll_loop(const int signal_fd)
         goto error_fd; 
     }
 
-    // 2 -- UART 온도/습도 수신 이벤트
+    // 2 -- UART stm32 수신 이벤트
     int uart_fd = start_uart();
     memset(&uart_ctx, 0, sizeof(uart_ctx));
     if(uart_fd == -1)
@@ -58,7 +58,7 @@ int epoll_loop(const int signal_fd)
     epoll_event_handle_t handle_uart =
     {
         .fd = uart_fd,
-        .func = read_uart_sht30,
+        .func = read_uart_stm32,
         .ctx = &uart_ctx,
     };
     ep_event.events = EPOLLIN;

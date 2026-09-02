@@ -9,7 +9,7 @@
 #include "uart/uart_parser.h"
 #include "uart/uart.h"
 #include "config.h"
-#include "frame/frame_sht30.h"
+#include "frame/frame_stm32.h"
 #include "epoll_loop.h"
 
 #include "oled/oled.h"
@@ -61,13 +61,12 @@ error:
     return -1;
 }
 
-int read_uart_sht30(epoll_event_handle_t *handle)
+int read_uart_stm32(epoll_event_handle_t *handle)
 {
-    printf("UART!!!!!\n");
     char buff[BUFFSIZE];
     int fd = handle->fd;
     frame_parser_t *parser = &((epoll_uart_ctx_t *)handle->ctx)->frame_parser;
-    frame_sht30_t *sht30 = &((epoll_uart_ctx_t *)handle->ctx)->frame_sht30;
+    frame_stm32_t *stm32 = &((epoll_uart_ctx_t *)handle->ctx)->frame_stm32;
 
     ssize_t res = read(fd, buff, sizeof(buff));
     if(res == -1)
@@ -82,21 +81,19 @@ int read_uart_sht30(epoll_event_handle_t *handle)
     }
     else
     {
-        if(parser_feed(parser, sht30, (uint8_t *)buff, res) == 0)
+        if(parser_feed(parser, stm32, (uint8_t *)buff, res) == 0)
         {   // CASE : 프레임의 모든 데이터가 다 들어온 경우
-            // calc_sht30(sht30);
+            // calc_sht30(stm32);
             char tmp[64] = {0};
-
-            char timestamp[TM_BUFF_LEN] = {0};
-            get_now_time(timestamp, sizeof(timestamp));
-
-            snprintf(tmp, sizeof(tmp), "[UART] Temp : %d.%02d C, Humi : %d.%02d %%",
-                (int)(sht30->temp/100), (int)(sht30->temp%100), (int)(sht30->humi/100), (int)(sht30->humi%100));
-            printf("\n%s\n", tmp);
+            snprintf(tmp, sizeof(tmp), "\n[UART] Temp : %d.%02d C, Humi : %d.%02d %%, light : %d\n",
+                (int)(stm32->temp/100), (int)(stm32->temp%100), (int)(stm32->humi/100), (int)(stm32->humi%100), (int)(stm32->light));
+            log_write(LL_DEBUG, LC_SHOW_PRINTF | LC_NOT_WRITE, tmp);
 
             // 디버깅용
             FILE *fp = fopen("/tmp/farmd_status", "w");
             if (fp) {
+                char timestamp[TM_BUFF_LEN] = {0};
+                get_now_time(timestamp, sizeof(timestamp));
                 fprintf(fp, "%s %s\n", timestamp, tmp);
                 fclose(fp);
             }
@@ -109,8 +106,8 @@ int read_uart_sht30(epoll_event_handle_t *handle)
     }
 }
 
-// static void calc_sht30(frame_sht30_t *sht30)
+// static void calc_sht30(frame_stm32_t *stm32)
 // {
-//     sht30->raw_temp = (uint16_t)(-45 + 175 * ((float)sht30->raw_temp / 65535.0));
-//     sht30->raw_humi = (uint16_t)(100 * ((float)sht30->raw_humi / 65535.0));
+//     stm32->raw_temp = (uint16_t)(-45 + 175 * ((float)stm32->raw_temp / 65535.0));
+//     stm32->raw_humi = (uint16_t)(100 * ((float)stm32->raw_humi / 65535.0));
 // }
