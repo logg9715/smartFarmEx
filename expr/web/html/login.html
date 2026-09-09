@@ -1,12 +1,153 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>web login</title></head>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmartFarm Console</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2027;
+    --border: #2a333d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #3fb950;
+    --danger: #f85149;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, "Noto Sans KR", sans-serif;
+  }
+  .card {
+    width: 100%;
+    max-width: 360px;
+    margin: 24px;
+    padding: 32px 28px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    margin: 0 0 28px 20px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    padding: 11px 12px;
+    margin-bottom: 18px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus,
+  input[type="password"]:focus {
+    border-color: var(--accent);
+  }
+  button {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: #0d1117;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  button:hover { filter: brightness(1.1); }
+  button:active { filter: brightness(0.95); }
+  .error {
+    display: none;
+    margin-bottom: 18px;
+    padding: 10px 12px;
+    background: rgba(248, 81, 73, 0.1);
+    border: 1px solid rgba(248, 81, 73, 0.35);
+    border-radius: 6px;
+    color: var(--danger);
+    font-size: 13px;
+  }
+  .error.show { display: block; }
+  .foot {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+</style>
+</head>
 <body>
-    <h2>web Login</h2>
-    <form method="POST" action="/login">
-        <input type="text" name="id" placeholder="id"><br>
-        <input type="password" name="pw" placeholder="password"><br>
-        <button type="submit">Login</button>
+  <div class="card">
+    <div class="brand">
+      <span class="dot"></span>
+      <h1>SmartFarm Console</h1>
+    </div>
+    <p class="sub">Raspberry Pi / STM32 monitoring</p>
+
+    <div class="error" id="err">아이디 또는 비밀번호가 올바르지 않습니다.</div>
+
+    <form method="POST" action="/login" autocomplete="off">
+      <label for="id">ID</label>
+      <input type="text" id="id" name="id" required autofocus>
+
+      <label for="pw">PASSWORD</label>
+      <input type="password" id="pw" name="pw" required>
+
+      <button type="submit">로그인</button>
     </form>
+
+    <div class="foot">farmd / epoll http server</div>
+  </div>
+
+<script>
+  if (location.search.indexOf('error') !== -1) {
+    document.getElementById('err').classList.add('show');
+  }
+</script>
 </body>
 </html>

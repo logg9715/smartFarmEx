@@ -16,9 +16,11 @@
 #include "util/util_time.h"
 
 #define BUFFSIZE 512
+#define CMD_WATER 0x20
 
 static frame_stm32_t g_frame_stm32 = {0};
 static char g_stm32_last_rcv_tm[TM_BUFF_LEN]; /* 마지막 데이터 수신시간 */
+static int g_uart_fd = -1;
 
 int start_uart(void)
 {
@@ -56,6 +58,7 @@ int start_uart(void)
         goto error_fd;
     }
 
+    g_uart_fd = fd;
     return fd;
 error_fd:
     close(fd);
@@ -97,13 +100,13 @@ int read_uart_stm32(epoll_event_handle_t *handle)
                 (int)(stm32->temp/100), (int)(stm32->temp%100), (int)(stm32->humi/100), (int)(stm32->humi%100), (int)(stm32->light));
             log_write(LL_DEBUG, LC_SHOW_PRINTF | LC_NOT_WRITE, tmp);
 
-            FILE *fp = fopen("/tmp/farmd_status", "w");
-            if (fp) {
-                char timestamp[TM_BUFF_LEN] = {0};
-                get_now_time(timestamp, sizeof(timestamp));
-                fprintf(fp, "%s %s\n", timestamp, tmp);
-                fclose(fp);
-            }
+            // FILE *fp = fopen("/tmp/farmd_status", "w");
+            // if (fp) {
+            //     char timestamp[TM_BUFF_LEN] = {0};
+            //     get_now_time(timestamp, sizeof(timestamp));
+            //     fprintf(fp, "%s %s\n", timestamp, tmp);
+            //     fclose(fp);
+            // }
             // ------------------------------------
             return 0;
         }
@@ -116,6 +119,30 @@ int read_uart_stm32(epoll_event_handle_t *handle)
 
 void *get_stm32_value(frame_stm32_t *out) {*out = g_frame_stm32;}
 void get_stm32_last_rcv_tm(char out[]) {strcpy(out, g_stm32_last_rcv_tm);}
+
+/* STM32에 명령 전송, 성공=0 실패=-1*/
+int send_water_cmd(int sec)
+{
+    uint8_t frame[6];
+    if (g_uart_fd < 0 || sec < 1 || sec > 255)
+        return -1;
+
+    frame[0] = 0x02;    /* STX */
+    frame[1] = 0x01;    /* payload 길이 */
+    frame[2] = CMD_WATER;   /* 명령 종류 */
+    frame[3] = (uint8_t)sec;    /* 지속 시간(초) */
+    frame[4] = 0x00;    /* 예약 */
+    frame[5] = 0x03;    /* ETX */
+
+    if (write(g_uart_fd, frame, sizeof(frame)) != (ssize_t)sizeof(frame))
+    {
+        log_write(LL_ERROR, LC_SHOW_PERROR, "send_water_cmd > write");
+        return -1;
+    }
+
+    log_write(LL_INFO, 0, "water command sent");
+    return 0;
+}
 
 // static void calc_sht30(frame_stm32_t *stm32)
 // {

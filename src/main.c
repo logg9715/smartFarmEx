@@ -13,7 +13,7 @@ int main(int argc, char const *argv[])
     // log
     if(log_open(LOG_PATH) == -1)
         return EXIT_FAILURE;
-    log_set_level(LL_DEBUG); // 중요 !!!!!!!! [로그 레벨 설정]
+    log_set_level(LOG_LEVEL); // 중요 !!!!!!!! [로그 레벨 설정]
     log_write(LL_INFO, LC_SHOW_PRINTF, "log ready");
 
     // signal handler

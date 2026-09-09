@@ -334,7 +334,7 @@ int is_request_complete(const char *buf, size_t total)
 
 void handle_http_request(web_conn_t *c)
 {
-    char response_buff[8192];   // todo 동적할당
+    char response_buff[32768];   // todo 동적할당
     http_req_cus_t req_info;
     // printf("---- RAW REQUEST ----\n%s\n---------------------\n", c->rbuf);
 
@@ -420,6 +420,35 @@ void handle_http_request(web_conn_t *c)
         return;
     }
 
+    // ---- [인증 필요] POST /api/water ----
+    if (strcmp(req_info.method, "POST") == 0 && strcmp(req_info.path, "api/water") == 0)
+    {
+        char sec_str[8] = {0};
+        int  sec = 5;
+
+        if (req_info.body && parse_form_value(req_info.body, "sec", sec_str, sizeof(sec_str)) == 0)
+            sec = atoi(sec_str);
+
+        if (sec < 1 || sec > WATER_MAX_SEC)
+        {
+            send_response(c->handle.fd, response_buff, sizeof(response_buff),400, 
+                "Bad Request", "application/json", "{\"ok\":0,\"msg\":\"invalid sec\"}");
+            return;
+        }
+
+        if (send_water_cmd(sec) < 0)
+        {
+            send_response(c->handle.fd, response_buff, sizeof(response_buff), 500, 
+                "Internal Server Error", "application/json", "{\"ok\":0,\"msg\":\"uart write failed\"}");
+            return;
+        }
+
+        char res[64] = {0};
+        snprintf(res, sizeof(res), "{\"ok\":1,\"sec\":%d}", sec);
+        send_response(c->handle.fd, response_buff, sizeof(response_buff), 200, "OK", "application/json", res);
+        return;
+    }
+
     // ---- [인증 필요] view 서빙 ----
     for (int i = 0; i < VIEW_COUNT; i++)
     {
@@ -441,7 +470,7 @@ int ready_webserver(int *listen_fd_out, int *timer_fd_out)
     // ================================================================= VIEW
     const char *VIEW_NAMES[] =
     {
-        "main.html", "hello.html", "login.html"
+        "main.html", "login.html"
     };
     int view_names_len = sizeof(VIEW_NAMES) / sizeof(VIEW_NAMES[0]);
     if (view_names_len > VIEW_COUNT)
