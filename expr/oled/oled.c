@@ -12,13 +12,13 @@
 typedef struct oled_fb
 {
     uint8_t buff[1024];
-} oled_fd_t;
+} oled_fb_t;
 
 int oled_cmd_send(int fd, uint8_t *cmd_list, int len);
-int oled_data_send(int fd, oled_fd_t *oled);
-void set_oled_data_buff(oled_fd_t *oled, int x, int y, int on);
-void set_oled_data_charbuff(oled_fd_t *oled, int x, int y, char c);
-void set_oled_data_strbuff(oled_fd_t *oled, int x, int y, const char *s);
+int oled_data_send(int fd, oled_fb_t *oled);
+void set_oled_data_buff(oled_fb_t *oled, int x, int y, int on);
+void set_oled_data_charbuff(oled_fb_t *oled, int x, int y, char c);
+void set_oled_data_strbuff(oled_fb_t *oled, int x, int y, const char *s);
 
 int oled_cmd_send(int fd, uint8_t* cmd_list, int len)
 {
@@ -40,7 +40,7 @@ int oled_cmd_send(int fd, uint8_t* cmd_list, int len)
     return 0;
 }
 
-int oled_data_send(int fd, oled_fd_t *oled)
+int oled_data_send(int fd, oled_fb_t *oled)
 {
     uint8_t buff[1025] = {0x40};
     memcpy(&buff[1], &(oled->buff[0]), sizeof(oled->buff) / sizeof(uint8_t));
@@ -54,7 +54,7 @@ int oled_data_send(int fd, oled_fd_t *oled)
     return 0;
 }
 
-void set_oled_data_charbuff(oled_fd_t *oled, int x, int y, char c)
+void set_oled_data_charbuff(oled_fb_t *oled, int x, int y, char c)
 {
     if (c < 32 || c > 126)
         c = '?';
@@ -69,7 +69,7 @@ void set_oled_data_charbuff(oled_fd_t *oled, int x, int y, char c)
     }
 }
 
-void set_oled_data_strbuff(oled_fd_t *oled, int x, int y, const char *s)
+void set_oled_data_strbuff(oled_fb_t *oled, int x, int y, const char *s)
 {
     while (*s) {
         set_oled_data_charbuff(oled, x, y, *s);
@@ -78,7 +78,7 @@ void set_oled_data_strbuff(oled_fd_t *oled, int x, int y, const char *s)
     }
 }
 
-void set_oled_data_buff(oled_fd_t *oled, int x, int y, int on)
+void set_oled_data_buff(oled_fb_t *oled, int x, int y, int on)
 {
     int list_idx = (y / 8) * 128 + x;
     int buff_idx = y % 8;
@@ -128,7 +128,7 @@ int main(void)
     oled_cmd_send(fd, init_seq, sizeof(init_seq));
 
     // 화면 초기화
-    oled_fd_t oled = {.buff = {0}};
+    oled_fb_t oled = {.buff = {0}};
     oled_data_send(fd, &oled);
 
     for (int i = 0; i < 64; i++)

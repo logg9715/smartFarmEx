@@ -12,6 +12,7 @@
 #include "util/util_log.h"
 #include "uart/uart.h"
 #include "webserver/web_server.h"
+#include "oled/oled.h"
 
 #define TIMEOUT 5000
 #define MAX_EVENTS 10
@@ -25,6 +26,8 @@ int epoll_loop(const int signal_fd)
     int return_code = -1;
     int epoll_fd = -1;
     int uart_fd = -1;
+    int oled_fd = -1;
+    int oled_timer_fd = -1;
     int web_listen_fd = -1, web_timer_fd = -1;
     struct epoll_event event_list[MAX_EVENTS];
     int ret;
@@ -68,6 +71,18 @@ int epoll_loop(const int signal_fd)
     }
     web_accept_ctx_t web_accept_ctx = {.epoll_fd = epoll_fd};
     if(epoll_add(epoll_fd, web_listen_fd, web_accept, &web_accept_ctx, g_ep_event_handler_list, &g_ep_event_handler_list_cnt, MAX_EVENTS) == NULL)
+    {
+        log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop > epoll_add3-1");
+        goto clear;
+    }
+
+    // 4 -- OLED 타이머 이벤트
+    ret = ready_oled(&oled_fd, &oled_timer_fd);
+    if(ret == -1)
+        goto clear;
+    clear_oled_display(oled_fd);
+    oled_ctx_t oled_ctx = {.oled_fd = oled_fd};
+    if(epoll_add(epoll_fd, oled_timer_fd, oled_handle, &oled_ctx, g_ep_event_handler_list, &g_ep_event_handler_list_cnt, MAX_EVENTS) == NULL)
     {
         log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop > epoll_add4");
         goto clear;
@@ -127,6 +142,11 @@ clear :
     if(uart_fd >= 0) close(uart_fd);
     if(web_listen_fd >= 0) close(web_listen_fd);
     if(web_timer_fd >= 0) close(web_timer_fd);
+    if(oled_fd >= 0)
+    {
+        clear_oled_display(oled_fd);
+        close(oled_fd);
+    } 
     if(epoll_fd >= 0) close(epoll_fd);
     return return_code;
 }
