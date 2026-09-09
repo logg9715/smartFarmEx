@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmartFarm Console</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2027;
+    --border: #2a333d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #3fb950;
+    --danger: #f85149;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, "Noto Sans KR", sans-serif;
+  }
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .dot.down { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+  .link.down #linkText { color: var(--danger); }
+  #lastRx {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+  }
+  .logout {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .logout:hover { color: var(--text); border-color: var(--muted); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    padding: 22px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: opacity 0.25s;
+  }
+  .card .label {
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .card .value {
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .card .unit {
+    margin-left: 4px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  body.stale .card { opacity: 0.35; }
+
+  .control {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    padding: 18px 22px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .control .label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  #waterBtn {
+    padding: 10px 22px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: #0d1117;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  #waterBtn:hover:not(:disabled) { filter: brightness(1.1); }
+  #waterBtn:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+  #waterMsg {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  #waterMsg.err { color: var(--danger); }
+
+  .foot {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title">
+      <h1>SmartFarm Console</h1>
+      <span class="link" id="link">
+        <span class="dot" id="dot"></span>
+        <span id="linkText">연결 확인 중</span>
+      </span>
+    </div>
+
+    <div class="meta">
+      <span id="lastRx">--:--:--</span>
+      <a class="logout" href="/logout">로그아웃</a>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">온도</div>
+      <div class="value"><span id="temp">--</span><span class="unit">&deg;C</span></div>
+    </div>
+    <div class="card">
+      <div class="label">습도</div>
+      <div class="value"><span id="humi">--</span><span class="unit">%</span></div>
+    </div>
+    <div class="card">
+      <div class="label">조도</div>
+      <div class="value"><span id="light">--</span><span class="unit">lux</span></div>
+    </div>
+  </div>
+
+  <div class="control">
+    <span class="label">급수</span>
+    <button id="waterBtn" type="button">5초 급수</button>
+    <span id="waterMsg"></span>
+  </div>
+
+  <div class="foot">farmd / epoll http server</div>
+</div>
+
+<script>
+(function () {
+  var POLL_MS = 2000;
+  var STALE_COUNT = 4;          // 같은 timestamp가 4회 연속이면 두절로 판정
+
+  var elTemp   = document.getElementById('temp');
+  var elHumi   = document.getElementById('humi');
+  var elLight  = document.getElementById('light');
+  var elLastRx = document.getElementById('lastRx');
+  var elLink   = document.getElementById('link');
+  var elText   = document.getElementById('linkText');
+  var elDot    = document.getElementById('dot');
+
+  var prevStamp = null;
+  var sameCount = 0;
+
+  function setLink(up, message) {
+    elText.textContent = message;
+    elLink.classList.toggle('down', !up);
+    elDot.classList.toggle('down', !up);
+    document.body.classList.toggle('stale', !up);
+  }
+
+  function render(d) {
+    elTemp.textContent  = (d.temp  !== undefined) ? d.temp.toFixed(2) : '--';
+    elHumi.textContent  = (d.humi  !== undefined) ? d.humi.toFixed(2) : '--';
+    elLight.textContent = (d.light !== undefined) ? d.light : '--';
+
+    var stamp = d.timestamp || '';
+    elLastRx.textContent = stamp ? stamp : '수신 대기';
+
+    if (!stamp) {
+      setLink(false, 'STM32 수신 없음');
+      return;
+    }
+
+    if (stamp === prevStamp) {
+      sameCount++;
+    } else {
+      sameCount = 0;
+      prevStamp = stamp;
+    }
+
+    // 서버가 두절을 판정했거나(stm32_stat=0), timestamp가 멈춰 있으면 끊김
+    var serverDown = (d.stm32_stat !== undefined) && (d.stm32_stat === 0);
+    var frozen     = (sameCount >= STALE_COUNT);
+
+    if (serverDown || frozen)
+      setLink(false, 'STM32 통신 끊김');
+    else
+      setLink(true, 'STM32 정상');
+  }
+
+  function poll() {
+    fetch('/api/sensor', { cache: 'no-store' })
+      .then(function (r) {
+        if (r.redirected) {            // 세션 만료 -> 로그인으로
+          location.href = '/login.html';
+          return null;
+        }
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (d) { if (d) render(d); })
+      .catch(function () {
+        setLink(false, '서버 응답 없음');
+      });
+  }
+
+  poll();
+  setInterval(poll, POLL_MS);
+
+  // ---- 급수 ----
+  var WATER_SEC = 5;
+  var btn = document.getElementById('waterBtn');
+  var msg = document.getElementById('waterMsg');
+
+  function countdown(left) {
+    if (left <= 0) {
+      btn.disabled = false;
+      btn.textContent = WATER_SEC + '초 급수';
+      msg.textContent = '완료';
+      return;
+    }
+    btn.textContent = '급수 중 ' + left + 's';
+    setTimeout(function () { countdown(left - 1); }, 1000);
+  }
+
+  btn.addEventListener('click', function () {
+    btn.disabled = true;
+    msg.className = '';
+    msg.textContent = '';
+
+    fetch('/api/water', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'sec=' + WATER_SEC
+    })
+      .then(function (r) {
+        if (r.redirected) { location.href = '/login.html'; return null; }
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d) return;
+        if (d.ok) {
+          countdown(WATER_SEC);
+        } else {
+          throw new Error(d.msg || 'failed');
+        }
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        btn.textContent = WATER_SEC + '초 급수';
+        msg.className = 'err';
+        msg.textContent = '급수 실패: ' + e.message;
+      });
+  });
+})();
+</script>
+</body>
+</html>
