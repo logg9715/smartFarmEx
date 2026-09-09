@@ -53,3 +53,8 @@ int check_signal_term(const int fd)
     else 
         return 0;
 }
+
+void close_signal_handler(int fd)
+{
+    close(fd);
+}

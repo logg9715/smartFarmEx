@@ -13,5 +13,7 @@ typedef struct
 
 int start_uart();
 int read_uart_stm32(epoll_event_handle_t *);
+void *get_stm32_value(frame_stm32_t *);
+void get_stm32_last_rcv_tm(char *);
 
 #endif

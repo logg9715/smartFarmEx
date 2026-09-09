@@ -3,5 +3,6 @@
 
 int set_signal_handler(void);
 int check_signal_term(const int);
+void close_signal_handler(int);
 
 #endif

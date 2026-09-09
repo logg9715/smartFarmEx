@@ -15,5 +15,7 @@ struct epoll_event_handle
 
 int epoll_loop(const int);
 int finish_loop(epoll_event_handle_t *);
+epoll_event_handle_t *epoll_add(int, int, int (*)(epoll_event_handle_t *), void *, epoll_event_handle_t *[], int *, const int);
+void free_handlers(epoll_event_handle_t *[], int);
 
 #endif

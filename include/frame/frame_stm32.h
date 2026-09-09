@@ -10,4 +10,6 @@ typedef struct
     uint16_t light;
 } frame_stm32_t;
 
+
+
 #endif
