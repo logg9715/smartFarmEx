@@ -15,6 +15,7 @@ C로 구현, Epoll 기반 단일 스레드 동작
 
 ## 1. 블럭 다이어그램
 <img width="1470" height="900" alt="image" src="https://github.com/user-attachments/assets/b62432a9-aa38-479a-b790-3c38e2f5c2be" />
+
 | 계층 | 담당 |
 |---|---|
 | STM32 | 센서값 측정, 액추에이터 구동(물주기, 조명 같은 / 프로젝트에서는 워터펌프 대신 LED 동작으로 대체) |
