@@ -24,6 +24,7 @@
 #include "uart/uart.h"
 #include "uart/uart_parser.h"
 #include "util/util_time.h"
+#include "uart/uart_check_timer.h"
 
 #define MAX_EVENTS 32
 #define MAX_SESSIONS 64
@@ -57,7 +58,7 @@ void send_redirect(int fd, char *buff, size_t buff_size, const char *location, c
     int len = build_response_ex(buff, buff_size, 302, "Found", "text/plain", headers, "");
     if (len < 0 || (size_t)len >= buff_size)
     {
-        log_write(LL_ERROR, LC_SHOW_PRINTF, "send_redirect > response truncated\n");
+        log_write(LL_ERROR, LC_SHOW_PRINTF, "send_redirect > response truncated");
         return;
     }
 
@@ -258,7 +259,7 @@ static int send_response(int fd, char *buff, size_t buff_size, int status, const
 
     if (len < 0 || (size_t)len >= buff_size)
     {
-        log_write(LL_ERROR, LC_SHOW_PRINTF, "send_response > response truncated\n");
+        log_write(LL_ERROR, LC_SHOW_PRINTF, "send_response > response truncated");
         return -1;
     }
 
@@ -407,13 +408,14 @@ void handle_http_request(web_conn_t *c)
         char res[256] = {0};
         char timestamp[TM_BUFF_LEN] = {0};
         get_stm32_last_rcv_tm(timestamp);
-        snprintf(res, sizeof(res), "{\"temp\":%d.%02d,\"humi\":%d.%02d,\"light\":%d,\"timestamp\":\"%s\", \"stm32_stat\":1}",   // todo : 와치독 만들면 연결
+        snprintf(res, sizeof(res), "{\"temp\":%d.%02d,\"humi\":%d.%02d,\"light\":%d,\"timestamp\":\"%s\", \"stm32_stat\":%d}",   // todo : 와치독 만들면 연결
             g_state.temp / 100, 
             g_state.temp % 100,
             g_state.humi / 100, 
             g_state.humi % 100,
             g_state.light,
-            timestamp
+            timestamp,
+            get_uart_stat()
         );
         send_response(c->handle.fd, response_buff, sizeof(response_buff), 200, "OK", "application/json", res);
        
@@ -475,7 +477,7 @@ int ready_webserver(int *listen_fd_out, int *timer_fd_out)
     int view_names_len = sizeof(VIEW_NAMES) / sizeof(VIEW_NAMES[0]);
     if (view_names_len > VIEW_COUNT)
     { 
-        log_write(LL_ERROR, LC_SHOW_PRINTF, "ready_webserver > too many view files\n");
+        log_write(LL_ERROR, LC_SHOW_PRINTF, "ready_webserver > too many view files");
         goto err;
     }
     for (int i = 0; i < view_names_len; i++)
@@ -489,7 +491,7 @@ int ready_webserver(int *listen_fd_out, int *timer_fd_out)
             continue;
         }
         char tmpBuff[1024] = {0};
-        snprintf(tmpBuff, sizeof(tmpBuff), "opened View >======>> %s\n", views[i].path);
+        snprintf(tmpBuff, sizeof(tmpBuff), "opened View >======>> %s", views[i].path);
         log_write(LL_INFO, LC_SHOW_PRINTF, tmpBuff);
     }
     // ================================================================= 타이머

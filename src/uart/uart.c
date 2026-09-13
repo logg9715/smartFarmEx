@@ -14,6 +14,7 @@
 #include "epoll_loop.h"
 #include "oled/oled.h"
 #include "util/util_time.h"
+#include "uart/uart_check_timer.h"
 
 #define BUFFSIZE 512
 #define CMD_WATER 0x20
@@ -80,7 +81,7 @@ int read_uart_stm32(epoll_event_handle_t *handle)
             return 0; /* 일시적. 다음 이벤트에서 다시 */
 
         log_write(LL_ERROR, LC_SHOW_PERROR, "read_uart > read");
-        return -1;
+        return EP_CRITICAL_ERR;
     }
     else if (res == 0)
     {
@@ -89,6 +90,7 @@ int read_uart_stm32(epoll_event_handle_t *handle)
     }
     else
     {
+        update_uart_check_timer();// 마지막 통신시간 갱신
         if(parser_feed(parser, stm32, (uint8_t *)buff, res) == 0)
         {   // CASE : 프레임의 모든 데이터가 다 들어온 경우
             g_frame_stm32 = *stm32;
@@ -96,7 +98,7 @@ int read_uart_stm32(epoll_event_handle_t *handle)
             // --------------디버깅용--------------
             // calc_sht30(stm32);
             char tmp[64] = {0};
-            snprintf(tmp, sizeof(tmp), "\n[UART] Temp : %d.%02d C, Humi : %d.%02d %%, light : %d\n",
+            snprintf(tmp, sizeof(tmp), "\n[UART] Temp : %d.%02d C, Humi : %d.%02d %%, light : %d",
                 (int)(stm32->temp/100), (int)(stm32->temp%100), (int)(stm32->humi/100), (int)(stm32->humi%100), (int)(stm32->light));
             log_write(LL_DEBUG, LC_SHOW_PRINTF | LC_NOT_WRITE, tmp);
 
@@ -143,6 +145,7 @@ int send_water_cmd(int sec)
     log_write(LL_INFO, 0, "water command sent");
     return 0;
 }
+
 
 // static void calc_sht30(frame_stm32_t *stm32)
 // {

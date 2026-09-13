@@ -23,3 +23,10 @@ int get_now_time(char *out, const size_t out_size)
     else 
         return 0;
 }
+
+time_t get_now_monotime(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec;
+}

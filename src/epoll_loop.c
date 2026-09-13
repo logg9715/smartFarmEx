@@ -13,6 +13,8 @@
 #include "uart/uart.h"
 #include "webserver/web_server.h"
 #include "oled/oled.h"
+#include "uart/uart_check_timer.h"
+#include "stat_logger.h"
 
 #define TIMEOUT 5000
 #define MAX_EVENTS 10
@@ -25,7 +27,9 @@ int epoll_loop(const int signal_fd)
 {
     int return_code = -1;
     int epoll_fd = -1;
+    int proc_stat_timer_fd = -1;
     int uart_fd = -1;
+    int uart_timer_fd = -1;
     int oled_fd = -1;
     int oled_timer_fd = -1;
     int web_listen_fd = -1, web_timer_fd = -1;
@@ -42,7 +46,7 @@ int epoll_loop(const int signal_fd)
 
     // epoll에 이벤트 등록
     // 1 -- 시그널 이벤트
-    if(epoll_add(epoll_fd, signal_fd, finish_loop, NULL, g_ep_event_handler_list, &g_ep_event_handler_list_cnt, MAX_EVENTS) == NULL)
+    if(epoll_add(epoll_fd, signal_fd, sig_event_handler, NULL, g_ep_event_handler_list, &g_ep_event_handler_list_cnt, MAX_EVENTS) == NULL)
     {
         log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop > epoll_add1");
         goto clear; 
@@ -51,17 +55,25 @@ int epoll_loop(const int signal_fd)
     // 2 -- UART stm32 수신 이벤트
     uart_fd = start_uart();
     epoll_uart_ctx_t uart_ctx = {0};
-    if(uart_fd == -1)
+    if(uart_fd == EP_CRITICAL_ERR)
         goto clear;
     if(epoll_add(epoll_fd, uart_fd, read_uart_stm32, &uart_ctx, g_ep_event_handler_list, &g_ep_event_handler_list_cnt, MAX_EVENTS) == NULL)
     {
         log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop > epoll_add2");
         goto clear; 
     }
-
+    ret = ready_uart_timout_timer(&uart_timer_fd);
+    if(ret == EP_CRITICAL_ERR)
+        goto clear;
+    if(epoll_add(epoll_fd, uart_timer_fd, handle_uart_check_timer, NULL, g_ep_event_handler_list, &g_ep_event_handler_list_cnt, MAX_EVENTS) == NULL)
+    {
+        log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop > epoll_add2-1");
+        goto clear;
+    }
+    
     // 3 -- web 서버 이벤트
     ret = ready_webserver(&web_listen_fd, &web_timer_fd);
-    if(ret == -1)
+    if(ret == EP_CRITICAL_ERR)
         goto clear;
     web_timer_ctx_t timer_ctx = {.epoll_fd = epoll_fd};
     if(epoll_add(epoll_fd, web_timer_fd, read_web_timer, &timer_ctx, g_ep_event_handler_list, &g_ep_event_handler_list_cnt, MAX_EVENTS) == NULL)
@@ -78,7 +90,7 @@ int epoll_loop(const int signal_fd)
 
     // 4 -- OLED 타이머 이벤트
     ret = ready_oled(&oled_fd, &oled_timer_fd);
-    if(ret == -1)
+    if(ret == EP_CRITICAL_ERR)
         goto clear;
     clear_oled_display(oled_fd);
     oled_ctx_t oled_ctx = {.oled_fd = oled_fd};
@@ -88,10 +100,20 @@ int epoll_loop(const int signal_fd)
         goto clear;
     }
 
+    // 5 -- 프로세스 상태 로거
+    ret = ready_stat_log_timer(&proc_stat_timer_fd);
+    if(ret == EP_CRITICAL_ERR)
+        goto clear;
+    if(epoll_add(epoll_fd, proc_stat_timer_fd, handle_stat_log_timer, NULL, g_ep_event_handler_list, &g_ep_event_handler_list_cnt, MAX_EVENTS) == NULL)
+    {
+        log_write(LL_ERROR, LC_SHOW_PERROR, "epoll_loop > epoll_add5");
+        goto clear;
+    }
+
     // wait 루프
     while (g_is_working)
     {
-        log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, "waiting...\n");
+        log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, "waiting...");
 
         // sigaction을 사용할 경우 while과 epoll_wait의 블로킹이 되기 이전에 시그널이 들어온 경우,
         // 블로킹이 종료되고 루프가 돌아야 시그널이 반응함
@@ -110,7 +132,7 @@ int epoll_loop(const int signal_fd)
 		}
 		else if (ret == 0)	// CASE : timeout이 발생한 경우
 		{
-            log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, "timeout\n");
+            log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, "timeout");
 		}
         else if (ret > 0)   // CASE : 이벤트가 감지된 경우
         {
@@ -119,7 +141,7 @@ int epoll_loop(const int signal_fd)
             {
                 epoll_event_handle_t *e = event_list[event_list_index].data.ptr;
                 int res = e->func(e);
-                if(res == -1)
+                if(res == EP_CRITICAL_ERR)
                     goto clear;
             }
             // ==========================================================================================
@@ -132,7 +154,7 @@ int epoll_loop(const int signal_fd)
         log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, loop_end_buff);
         // ----------------------------------------------------
     }
-    log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, "closing process...\n");
+    log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, "closing process...");
     return_code = 0;
 clear :
     web_conn_close_all(epoll_fd);
@@ -140,8 +162,10 @@ clear :
     g_ep_event_handler_list_cnt = 0;
 
     if(uart_fd >= 0) close(uart_fd);
+    if(uart_timer_fd >= 0) close(uart_timer_fd);
     if(web_listen_fd >= 0) close(web_listen_fd);
     if(web_timer_fd >= 0) close(web_timer_fd);
+    if(proc_stat_timer_fd >= 0) close(proc_stat_timer_fd);
     if(oled_fd >= 0)
     {
         clear_oled_display(oled_fd);
@@ -149,20 +173,6 @@ clear :
     } 
     if(epoll_fd >= 0) close(epoll_fd);
     return return_code;
-}
-
-int finish_loop(epoll_event_handle_t *handle)
-{
-    int res = check_signal_term((int)handle->fd);
-    if(res == 1) 
-    {
-        g_is_working = 0; 
-        printf("detected SIGTERM\n");
-    }
-    else if (res == -1) 
-        return -1;
-    
-    return 0;
 }
 
 // epoll에 이벤트 등록
@@ -185,7 +195,7 @@ epoll_event_handle_t *epoll_add(int epoll_fd, int event_fd, int (*func)(epoll_ev
     // 회수 공간 확인
     if(*list_cnt >= list_cnt_max)
     {
-        log_write(LL_ERROR, LC_SHOW_PRINTF, "epoll_add > too many events\n");
+        log_write(LL_ERROR, LC_SHOW_PRINTF, "epoll_add > too many events");
         goto err;
     }
 
@@ -211,3 +221,25 @@ void free_handlers(epoll_event_handle_t *list[], int list_cnt)
     for(int i = 0; i < list_cnt; i++)
         free(list[i]);
 }
+
+int sig_event_handler(epoll_event_handle_t *handle)
+{
+    int fd = (int)handle->fd;
+    int res = get_signal_type(fd);
+    if(res == 1) // 1=SIGTERM
+    {
+        g_is_working = 0; 
+        log_write(LL_INFO, LC_SHOW_PRINTF, "detected SIGTERM");
+    }
+    else if (res == 2) // 2=SIGHUP
+    {
+        log_reopen(LOG_PATH);
+        stat_log_reopen(STAT_LOG_PATH);
+        log_write(LL_INFO, LC_SHOW_PRINTF | LC_NOT_WRITE, "detected SIGHUP");
+    }
+    else if (res == -1) // ERROR
+        return EP_CRITICAL_ERR;
+
+    return 0;
+}
+

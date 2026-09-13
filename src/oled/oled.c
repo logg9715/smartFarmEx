@@ -150,8 +150,8 @@ int ready_oled(int *oled_fd_out, int *oled_timer_fd_out)
     }
     struct itimerspec its =
     {
-        .it_interval = { .tv_sec = OLED_REFRESH_TM },   // 10초 인터벌
-        .it_value    = { .tv_sec = OLED_REFRESH_TM },   // 10초 뒤에 발화
+        .it_interval = { .tv_sec = OLED_REFRESH_TM },   // N초 인터벌
+        .it_value    = { .tv_sec = 0, .tv_nsec = 1},   // N초 뒤에 발화
     };
     if (timerfd_settime(timer_fd, 0, &its, NULL) < 0)   // 타이머 시작
     {

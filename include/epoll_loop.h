@@ -1,6 +1,8 @@
 #ifndef EPOLL_LOOP_H
 #define EPOLL_LOOP_H
 
+#define EP_CRITICAL_ERR -1
+
 /*
     epoll 이벤트 처리용 함수 
     fd에 감시하는 대상 fd, func에 이벤트 처리 함수, ctx는 기타 데이터 처리용
@@ -14,8 +16,8 @@ struct epoll_event_handle
 };
 
 int epoll_loop(const int);
-int finish_loop(epoll_event_handle_t *);
 epoll_event_handle_t *epoll_add(int, int, int (*)(epoll_event_handle_t *), void *, epoll_event_handle_t *[], int *, const int);
 void free_handlers(epoll_event_handle_t *[], int);
+int sig_event_handler(epoll_event_handle_t *);
 
 #endif

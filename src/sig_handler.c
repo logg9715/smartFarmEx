@@ -15,6 +15,7 @@ int set_signal_handler(void)
 
     sigemptyset(&mask);
     sigaddset(&mask, SIGTERM);
+    sigaddset(&mask, SIGHUP);
     
     if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1)
     {
@@ -35,21 +36,23 @@ error_std :
 }
 
 /*
-return : SIGTERM 맞음 = 1, 아님 = 0, 에러 = -1 
+return : SIGTERM=1, SIGHUP=2 그외 = 0, 에러 = -1 
 */
-int check_signal_term(const int fd)
+int get_signal_type(const int fd)
 {
     struct signalfd_siginfo fdsi;
     ssize_t res;
     res = read(fd, &fdsi, sizeof(fdsi));
     if(res != sizeof(fdsi))
     {
-        log_write(LL_ERROR, LC_SHOW_PERROR, "check_signal_term > read");
+        log_write(LL_ERROR, LC_SHOW_PERROR, "get_signal_type > read");
         return -1;
     }
 
     if(fdsi.ssi_signo == SIGTERM) 
         return 1;
+    else if (fdsi.ssi_signo == SIGHUP)
+        return 2;
     else 
         return 0;
 }

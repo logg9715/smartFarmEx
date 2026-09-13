@@ -3,5 +3,6 @@
 
 #define TM_BUFF_LEN 40 
 int get_now_time(char *, const size_t);
+time_t get_now_monotime(void);
 
 #endif
