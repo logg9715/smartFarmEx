@@ -27,6 +27,7 @@ static void copy_errno_str(int err, char *buf, size_t size);
 */
 void log_set_level(const enum log_level lvl) 
 {
+    setvbuf(stdout, NULL, _IOLBF, 0); 
     g_show_level = lvl; 
 }
 
@@ -51,7 +52,10 @@ int log_reopen(const char *path)
     pthread_mutex_lock(&g_log_lock);
     FILE *new_fp = fopen(path, "a");
     if(new_fp == NULL)
+    {
+        pthread_mutex_unlock(&g_log_lock);
         return -1;
+    }
 
     setvbuf(new_fp, NULL, _IOLBF, 0);
 
@@ -143,7 +147,10 @@ int stat_log_reopen(const char *path)
     pthread_mutex_lock(&g_log_stat_lock);
     FILE *new_fp = fopen(path, "a");
     if(new_fp == NULL)
+    {
+        pthread_mutex_unlock(&g_log_stat_lock);
         return -1;
+    }
 
     setvbuf(new_fp, NULL, _IOLBF, 0);
 

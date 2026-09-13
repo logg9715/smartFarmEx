@@ -7,8 +7,6 @@
 int main(int argc, char const *argv[])
 {
     int signal_fd;
-    log_write(LL_INFO, LC_SHOW_PRINTF, "starting process...");
-    
     // # --- ready process --- 
     // log
     log_set_level(LOG_LEVEL);   // 로그 레벨 설정

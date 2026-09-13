@@ -15,6 +15,7 @@
 #include "uart/uart.h"
 #include "frame/frame_stm32.h"
 #include "util/util_time.h"
+#include "uart/uart_check_timer.h"
 
 #define OLED_REFRESH_TM 1
 
@@ -178,6 +179,7 @@ void clear_oled_display(int fd)
     oled_data_send(fd, &oled);
 }
 
+// uart EPOLL 핸들러 함수
 int oled_handle(epoll_event_handle_t *handle)
 {
     uint64_t exp;
@@ -193,13 +195,19 @@ int oled_handle(epoll_event_handle_t *handle)
     char timestamp[TM_BUFF_LEN] = {0};
     get_stm32_last_rcv_tm(timestamp);
     
+    // 첫번째출 : 온습도
     snprintf(res, sizeof(res), "TEMP:%d.%02d HUMI:%d.%02d", st.temp / 100, st.temp % 100, st.humi / 100, st.humi % 100);
     set_oled_data_strbuff(&fb, 0, 0, res);
 
+    // 세번째줄 : 조도
     snprintf(res, sizeof(res), "LIGHT:%d", st.light);
     set_oled_data_strbuff(&fb, 0, 16, res);
 
-    set_oled_data_strbuff(&fb, 0, 32, timestamp);
+    // 다섯번쨰 출 : 통신상태
+    if(get_uart_stat() == UART_CONN_OK)
+        set_oled_data_strbuff(&fb, 0, 32, timestamp);
+    else
+        set_oled_data_strbuff(&fb, 0, 32, "[WARN]UART DIS-CONN!!");
 
     oled_data_send(ctx->oled_fd, &fb);
     return 0;

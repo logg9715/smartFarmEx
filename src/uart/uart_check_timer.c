@@ -18,7 +18,14 @@ int handle_uart_check_timer(epoll_event_handle_t *handle)
     read(handle->fd, &exp, sizeof(exp));   // 타이머 만료 비우기
 
     int res = check_last_uart();
-    g_uart_stat = res;
+    if(g_uart_stat != res)
+    {
+        g_uart_stat = res;
+        if(g_uart_stat == UART_CONN_OK)
+            log_write(LL_INFO, LC_SHOW_PRINTF, "uart connected(re-connected)");
+        else
+            log_write(LL_ERROR, LC_SHOW_PERROR, "uart dis-connected. Please check UART connection.");
+    }
 
     return res;
 }
@@ -28,7 +35,7 @@ void update_uart_check_timer(void)
     g_last_tm = get_now_monotime();
 }
 
-// distance : 초 단위
+// return 신호있음=UART_CONN_OK 일정기간_신호없음=UART_CONN_TIMONT
 int check_last_uart(void)
 {
     time_t now_tm = get_now_monotime();

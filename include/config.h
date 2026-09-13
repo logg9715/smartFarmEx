@@ -10,8 +10,8 @@
 #define UART_DEVICE "/dev/serial0"
 #define UART_SPEED B115200
 #define WATER_MAX_SEC 30 
-#define UART_CHECK_TIMEOUT 10
-#define UART_CHECK_INTERVAL 5
+#define UART_CHECK_TIMEOUT 5
+#define UART_CHECK_INTERVAL 1
 
 // webserver
 #define WEBPORT 8080
