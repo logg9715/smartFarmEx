@@ -35,6 +35,12 @@ int parser_parse(frame_parser_t *p, frame_stm32_t *stm32)
         return -1;
 
     len = p->buff[stx+1];
+    if(len != sizeof(*stm32))
+    {
+        p->len -= 1;
+        memmove(&p->buff[0], &p->buff[1], p->len);
+        return -1;
+    }
     frame_len = len + 5;
     if(stx + frame_len > p->len)
         return -1;
