@@ -1,6 +1,8 @@
 # smartFarmEx
 STM32(stm32-f411re) + Raspberry-pi(버젼 4) 스마트팜 모니터링/제어 시스템
 C로 구현, Epoll 기반 단일 스레드 동작
+systemed 등록(부팅시 자동 실행), logrotate로 로그파일 관리
+TODO : 부팅시 UART, OLED등의 /dev검사로직 + 네트워크 연결(웹서버) 검사로직 넣고, 메인 소스와 분리하기 => 네트워크 연결 실패시 OLED에 에러문구 띄우기
 
 | | |
 |---|---|
@@ -129,8 +131,10 @@ STM32F411. `HAL_GetTick()` 기반 스케줄러
 
 상세: [smartFarmEx_stm32](https://github.com/logg9715/smartFarmEx_stm32)
  
-## 7. 빌드 방법
- 
+## 7. 빌드 및 운영
+
+### 7-1. C파일 빌드
+
 ```bash
 make            # bin/farmd
 ./bin/farmd     # 웹 포트 :8080
@@ -148,6 +152,83 @@ make            # bin/farmd
 | `EXPIRE_INTERVAL_SEC` | 5 (세션 검사주기) |
 | `WATER_MAX_SEC` | 30 (물주기시간 상한) |
 | `LOG_LEVEL` | `LL_ERROR` (N 이상의 심각도 로그만 표출) |
+
+
+### 7-2. systemd 서비스 등록 & 로그 관리
+| 파일정보 | 경로 |
+|---|---|
+| farmd(컴파일된 파일) | /home/유저명/sv/farmd/farmd |
+| html(웹뷰 디렉터리) | /home/유저명/sv/farmd/html |
+| 서비스 파일 | /etc/systemd/system/farmd.service |
+| 로그관리 설정 | /etc/logrotate.d/farmd | 
+
+
+
+``` service
+# farmd.service
+[Unit]
+# 서비스 표시이름
+Description=Smart Farm Daemon
+# 네트워크 연결된 이후 실행
+After=network.target
+# 프로세스 시작되려 할때 네트워크 켜기
+Wants=network.target
+
+[Service]
+# 기본값(파일 없어도 우선 실행성공 반환, 이후 execve시스템콜 실패하면 재시작)
+Type=simple
+# 실행 계정
+User=raspi
+Group=raspi
+# 장치 그룹 권한부여
+SupplementaryGroups=dialout i2c
+# 상대경로 지정
+WorkingDirectory=/home/raspi/sv/farmd
+# 실제 실행 명령
+ExecStart=/home/raspi/sv/farmd/farmd
+
+# 서비스 떨어지면 재시작
+Restart=on-failure
+# N초 뒤에 재시작
+RestartSec=5s
+
+# 로그 파일 만드는 권한
+LogsDirectory=farmd
+LogsDirectoryMode=0750
+
+[Install]
+# 네트워크 올라온 일반 서버 상태일떄 프로세스 시작
+WantedBy=multi-user.target
+```
+
+```
+# logrotate
+
+/var/log/farmd/*.log {
+    # 하루에 한 번 실행
+    daily
+    # 파일 용량 제한선인데, 하루에 한 번 로그파일 교체해서 의미 없음
+    maxsize 10M
+    # 개 까지 파일 보관
+    rotate 30
+    # 파일 없어도 오류처리 안함
+    missingok
+    # 내용이 비었으면 교체 안 함
+    notifempty
+    # 새로 만든 파일 권한지정
+    create 0640 raspi raspi
+
+# 매칭되는 로그파일이 여러개일 때의 처리 
+    sharedscripts
+    # 순회 직후 실행 (파일 여러개라도 한 번만 실행됨)
+    postrotate
+        # SIGHUP 보내기
+        systemctl kill -s HUP farmd.service 2>/dev/null || true
+    endscript
+}
+```
+
+
  
 ## 8. Source Map
  
