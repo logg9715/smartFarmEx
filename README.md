@@ -8,6 +8,8 @@ TODO : 부팅시 UART, OLED등의 /dev검사로직 + 네트워크 연결(웹서�
 |---|---|
 | 리눅스 데몬 | smartFarmEx(현재저장소) (`farmd`) |
 | STM32 펌웨어 | [smartFarmEx_stm32](https://github.com/logg9715/smartFarmEx_stm32) |
+| 데모 영상(클릭) |[![데모 영상](https://img.youtube.com/vi/aifCx9VgBNs/hqdefault.jpg)](https://youtu.be/aifCx9VgBNs) |    
+
 
 ## 구현 특징
 - 단일 epoll 이벤트 기반 루프 (시그널, 타이머, UART, 소켓, 다중 HTTP연결 통합)
@@ -257,7 +259,8 @@ expr/       테스트 코드
 - 명령 실행 확인 / UART 명령 전송 성공까지만 확인중
   : 상태 프레임에 액추에이터 상태 포함해야됨
 - 웹 인증 / 관리자계정 하드코딩 상태
-  : 환경설정에 관리자 메뉴 추가해야됨
+  : 환경설정에 관리자 메뉴 추가해야됨.     
+  : 웹뷰 종류가 하드코딩 상태, 웹기능 확장이 필요하면, 디렉터리 자동인식으로 바꿀 예정.     
  
 ## 10. 시스템 인터페이스
 
