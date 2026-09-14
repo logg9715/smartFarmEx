@@ -123,7 +123,7 @@ int epoll_loop(const int signal_fd)
 		{
             if(errno == EINTR)  // ctrl_z 시그널 중단처리
             {
-                log_write(LL_INFO, 0, "SIGTSTP");
+                log_write(LL_INFO, 0, "EINTR");
                 log_flush();
                 continue;
             }
