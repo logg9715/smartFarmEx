@@ -113,7 +113,7 @@ int epoll_loop(const int signal_fd)
     // wait 루프
     while (g_is_working)
     {
-        log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, "waiting...");
+        // log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, "waiting...");
 
         // sigaction을 사용할 경우 while과 epoll_wait의 블로킹이 되기 이전에 시그널이 들어온 경우,
         // 블로킹이 종료되고 루프가 돌아야 시그널이 반응함
@@ -147,11 +147,13 @@ int epoll_loop(const int signal_fd)
             // ==========================================================================================
         }
         // DEBUG ----------------------------------------------
+		/*
         char timestamp[TM_BUFF_LEN];
         get_now_time(timestamp, sizeof(timestamp));
         char loop_end_buff[128] = {0};
         snprintf(loop_end_buff, sizeof(loop_end_buff), "=========== %s ============", timestamp);
         log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, loop_end_buff);
+		*/
         // ----------------------------------------------------
     }
     log_write(LL_DEBUG, LC_NOT_WRITE | LC_SHOW_PRINTF, "closing process...");
@@ -166,7 +168,8 @@ clear :
     if(web_listen_fd >= 0) close(web_listen_fd);
     if(web_timer_fd >= 0) close(web_timer_fd);
     if(proc_stat_timer_fd >= 0) close(proc_stat_timer_fd);
-    if(oled_fd >= 0)
+    if(oled_timer_fd >= 0) close(oled_timer_fd);
+	if(oled_fd >= 0)
     {
         clear_oled_display(oled_fd);
         close(oled_fd);

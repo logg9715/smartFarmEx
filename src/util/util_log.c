@@ -90,10 +90,11 @@ void log_write(const enum log_level ll, const enum log_flag lc, const char *cont
         copy_errno_str(err, ebuff, sizeof(ebuff));
 
     if(lc & LC_SHOW_PERROR)
-        fprintf(stderr, "[%s] (%s) %s | %s\n", timestamp, get_log_level_str(ll), context, ebuff);
+        fprintf(stderr, "(%s) %s | %s\n", get_log_level_str(ll), context, ebuff);
+        // fprintf(stderr, "[%s] (%s) %s | %s\n", timestamp, get_log_level_str(ll), context, ebuff);
     
     if(lc & LC_SHOW_PRINTF)
-        printf("%s\n", context);
+        printf("(%s) %s\n", get_log_level_str(ll), context);
 
     if(!(lc & LC_NOT_WRITE))
     {

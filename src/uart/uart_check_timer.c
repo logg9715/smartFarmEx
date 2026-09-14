@@ -24,7 +24,7 @@ int handle_uart_check_timer(epoll_event_handle_t *handle)
         if(g_uart_stat == UART_CONN_OK)
             log_write(LL_INFO, LC_SHOW_PRINTF, "uart connected(re-connected)");
         else
-            log_write(LL_ERROR, LC_SHOW_PERROR, "uart dis-connected. Please check UART connection.");
+            log_write(LL_ERROR, LC_SHOW_PRINTF, "uart dis-connected. Please check UART connection.");
     }
 
     return res;
